@@ -8,7 +8,7 @@ This is a simple CLI tool to solve the NYT spelling bee.
 
 ## Installation
 ```bash
-cargo install --git https://github.com/tveness/cfgrs
+cargo install --git https://github.com/tveness/bee
 ```
 
 
