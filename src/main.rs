@@ -1,14 +1,7 @@
-use std::{collections::HashMap, env};
-
 use anyhow::{bail, Result};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-
-/*
-#[derive(Debug, Deserialize)]
-#[serde(transparent)]
-struct Word(String);
-*/
+use std::{collections::HashMap, env};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(transparent)]
