@@ -15,32 +15,6 @@ struct Word(String);
 struct WordMap(HashMap<String, Vec<String>>);
 
 fn main() -> Result<()> {
-    /* Process sowpods to sorted_sowpods */
-
-    /*
-    let sowpods = std::fs::read_to_string("sowpods.json").unwrap();
-
-    let sowpods: Vec<Word> = serde_json::from_str(&sowpods).unwrap();
-
-    let mut hm: HashMap<String, Vec<String>> = HashMap::new();
-
-    for w in sowpods {
-        let wl = w.0.to_lowercase();
-        // Sort
-        let mut chars: Vec<char> = wl.chars().collect();
-        chars.sort_by(|a, b| a.cmp(b));
-        chars.dedup();
-        let sorted_word: String = String::from_iter(chars);
-        let e = hm.entry(sorted_word).or_insert(vec![]);
-        e.push(wl);
-    }
-
-    let wm = WordMap(hm);
-    let output_str = serde_json::to_string(&wm).unwrap();
-
-    std::fs::write("sowpods_sorted.json", &output_str).unwrap();
-    */
-
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         bail!("Must be of form bee MABCDE, where M is the middle letter");
