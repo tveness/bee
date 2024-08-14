@@ -1,4 +1,4 @@
-# cfgrs
+# bee
 
 [![Build status](https://img.shields.io/github/actions/workflow/status/tveness/bee/rust.yml?style=for-the-badge)](https://github.com/tveness/bee/actions/workflows/rust.yml)
 [![License](https://img.shields.io/github/license/tveness/bee?style=for-the-badge)](https://opensource.org/license/agpl-v3)
