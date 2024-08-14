@@ -36,7 +36,7 @@ fn main() -> Result<()> {
     //eprintln!("Loading words...");
     //let sorted_words_str = std::fs::read_to_string("sowpods_sorted.json").unwrap();
     let sorted_words_str = include_str!("../sowpods_sorted.json");
-    let sorted_words: WordMap = serde_json::from_str(&sorted_words_str).unwrap();
+    let sorted_words: WordMap = serde_json::from_str(sorted_words_str).unwrap();
 
     // Generate all combinations: words must be at least 4 letters, so we have a total of
     // L = others.len()
