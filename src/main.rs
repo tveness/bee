@@ -26,8 +26,13 @@ fn main() -> Result<()> {
     }
 
     // Load initial sorted words
-    let sorted_words_bytes = include_bytes!("../sowpods_sorted.postcard");
-    let sorted_words: WordMap = postcard::from_bytes(sorted_words_bytes).unwrap();
+    //let sorted_words_bytes = include_bytes!("../sowpods_sorted.postcard");
+    //let sorted_words: WordMap = postcard::from_bytes(sorted_words_bytes).unwrap();
+
+    let sorted_words_bytes_compressed = include_bytes!("../sowpods_sorted.postcard.miniz");
+    let sorted_words_bytes =
+        miniz_oxide::inflate::decompress_to_vec(sorted_words_bytes_compressed).unwrap();
+    let sorted_words: WordMap = postcard::from_bytes(&sorted_words_bytes).unwrap();
 
     // Generate all combinations: words must be at least 4 letters, so we have a total of
     // L = others.len()
