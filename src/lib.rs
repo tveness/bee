@@ -1,10 +1,10 @@
 use anyhow::Result;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::collections::HashMap;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 #[serde(transparent)]
 pub struct WordMap(pub HashMap<String, Vec<String>>);
 
