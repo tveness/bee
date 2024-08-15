@@ -1,14 +1,7 @@
-use std::{collections::HashMap, env};
-
 use anyhow::{bail, Result};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-
-/*
-#[derive(Debug, Deserialize)]
-#[serde(transparent)]
-struct Word(String);
-*/
+use std::{collections::HashMap, env};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(transparent)]
@@ -33,10 +26,13 @@ fn main() -> Result<()> {
     }
 
     // Load initial sorted words
-    //eprintln!("Loading words...");
-    //let sorted_words_str = std::fs::read_to_string("sowpods_sorted.json").unwrap();
-    let sorted_words_str = include_str!("../sowpods_sorted.json");
-    let sorted_words: WordMap = serde_json::from_str(sorted_words_str).unwrap();
+    //let sorted_words_bytes = include_bytes!("../sowpods_sorted.postcard");
+    //let sorted_words: WordMap = postcard::from_bytes(sorted_words_bytes).unwrap();
+
+    let sorted_words_bytes_compressed = include_bytes!("../sowpods_sorted.postcard.miniz");
+    let sorted_words_bytes =
+        miniz_oxide::inflate::decompress_to_vec(sorted_words_bytes_compressed).unwrap();
+    let sorted_words: WordMap = postcard::from_bytes(&sorted_words_bytes).unwrap();
 
     // Generate all combinations: words must be at least 4 letters, so we have a total of
     // L = others.len()
