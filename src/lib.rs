@@ -25,6 +25,6 @@ where
         let mut a = a.clone();
         a.sort();
         a.dedup();
-        println!("{}: {:?}", l, a);
+        println!("{:>2}: {:?}", l, a);
     }
 }
