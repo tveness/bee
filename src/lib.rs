@@ -15,3 +15,16 @@ pub fn load_sorted_words() -> Result<WordMap> {
 
     Ok(sorted_words)
 }
+
+pub fn print_answers<T, U>(answers: &[(T, Vec<U>)])
+where
+    T: std::fmt::Display,
+    U: std::fmt::Debug + Ord + Clone,
+{
+    for (l, a) in answers {
+        let mut a = a.clone();
+        a.sort();
+        a.dedup();
+        println!("{}: {:?}", l, a);
+    }
+}

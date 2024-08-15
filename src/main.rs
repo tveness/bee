@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use bee::{load_sorted_words, WordMap};
+use bee::{load_sorted_words, print_answers, WordMap};
 use itertools::Itertools;
 use std::{collections::HashMap, env};
 
@@ -24,10 +24,7 @@ fn main() -> Result<()> {
     // Load initial sorted words
     let sorted_words: WordMap = load_sorted_words()?;
 
-    // Generate all combinations: words must be at least 4 letters, so we have a total of
-    // L = others.len()
-    // Total = 2^L - (L 2) - (L 3) combinations
-    //       = 2^L - L(L-1)/2 - L(L-1)(L-2)/6
+    // Generate all combinations
     let l = others.len();
     let mut answers: HashMap<usize, Vec<String>> = HashMap::new();
 
@@ -52,11 +49,6 @@ fn main() -> Result<()> {
     let mut answers: Vec<(usize, Vec<String>)> = answers.into_iter().collect();
     answers.sort_by(|a, b| a.0.cmp(&b.0));
 
-    for (l, a) in answers {
-        let mut a = a.clone();
-        a.sort();
-        a.dedup();
-        println!("{}: {:?}", l, a);
-    }
+    print_answers(&answers);
     Ok(())
 }
