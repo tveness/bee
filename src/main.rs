@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     others.sort();
     others.dedup();
 
-    println!("Central letter: {middle}");
+    println!("Central letter: {middle:?}");
     println!("Other letters: {others:?}");
     if others.len() < 3 {
         eprintln!("Too short for legal words");
