@@ -1,4 +1,5 @@
-use anyhow::Result;
+use anyhow::{bail, Result};
+use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
 use serde::Deserialize;
@@ -16,15 +17,72 @@ pub fn load_sorted_words() -> Result<WordMap> {
     Ok(sorted_words)
 }
 
-pub fn print_answers<T, U>(answers: &[(T, Vec<U>)])
-where
-    T: std::fmt::Display,
-    U: std::fmt::Debug + Ord + Clone,
-{
-    for (l, a) in answers {
-        let mut a = a.clone();
-        a.sort();
-        a.dedup();
-        println!("{:>2}: {:?}", l, a);
+pub fn print_answers(answers: &[Answer]) {
+    for Answer { length, words } in answers {
+        let mut words = words.clone();
+        words.sort();
+        words.dedup();
+        println!("{:>2}: {:?}", length, words);
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Answer {
+    pub length: usize,
+    pub words: Vec<String>,
+}
+
+impl PartialOrd for Answer {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.length.cmp(&other.length))
+    }
+}
+
+impl Ord for Answer {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.length.cmp(&other.length)
+    }
+}
+
+pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
+    let mut others = others;
+    others.sort();
+    others.dedup();
+
+    if others.len() < 2 {
+        bail!("Too short for legal words");
+    }
+    // Load initial sorted words
+    let sorted_words: WordMap = load_sorted_words()?;
+
+    // Generate all combinations
+    let l = others.len();
+    let mut answers: HashMap<usize, Vec<String>> = HashMap::new();
+
+    // Although minimum length is 4, the length of
+    // unique letters may be just two e.g. mama
+    for length in 1..=l {
+        for comb in others.clone().into_iter().combinations(length) {
+            let mut chosen_letters: Vec<char> = comb.into_iter().collect();
+            chosen_letters.push(middle);
+            chosen_letters.sort();
+            let sorted_word: String = String::from_iter(chosen_letters);
+            if let Some(words) = sorted_words.0.get(&sorted_word) {
+                for word in words {
+                    let l = word.len();
+                    if l > 3 {
+                        let entry = answers.entry(l).or_default();
+                        entry.push(word.clone());
+                    }
+                }
+            }
+        }
+    }
+    let mut answers: Vec<Answer> = answers
+        .into_iter()
+        .map(|(length, words)| Answer { length, words })
+        .collect();
+    answers.sort();
+
+    Ok(answers)
 }

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.2.2
+
+- Refactoring and structs to make code clearer
+
 ## 0.2.1
 
 - Refactoring of code
