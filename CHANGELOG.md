@@ -2,6 +2,7 @@
 
 ## 0.2.2
 
+- Change minimum length
 - Refactoring and structs to make code clearer
 
 ## 0.2.1
