@@ -28,13 +28,14 @@ fn main() -> Result<()> {
     let l = others.len();
     let mut answers: HashMap<usize, Vec<String>> = HashMap::new();
 
+    // Although minimum length is 4, the length of
+    // unique letters may be just two e.g. mama
     for length in 1..=l {
         for comb in others.clone().into_iter().combinations(length) {
             let mut chosen_letters: Vec<char> = comb.into_iter().collect();
             chosen_letters.push(middle);
             chosen_letters.sort();
             let sorted_word: String = String::from_iter(chosen_letters);
-            //println!("Chosen letters: {sorted_word}");
             if let Some(words) = sorted_words.0.get(&sorted_word) {
                 for word in words {
                     let l = word.len();
