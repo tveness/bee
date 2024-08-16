@@ -49,7 +49,7 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
     others.sort();
     others.dedup();
 
-    if others.len() == 0 {
+    if others.is_empty() {
         bail!("Too short for legal words");
     }
     // Load initial sorted words
