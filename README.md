@@ -7,9 +7,14 @@
 This is a simple CLI tool to solve the NYT spelling bee.
 
 ## Installation
+If you don't have rust, then you can install the toolchain by following the
+[official instructions](https://www.rust-lang.org/tools/install), after which
+life should be as simple as:
 ```bash
 cargo install --git https://github.com/tveness/bee
 ```
+
+A number of [binaries](https://github.com/tveness/bee/releases) are also available.
 
 
 ## Usage
