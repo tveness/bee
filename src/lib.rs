@@ -37,7 +37,7 @@ pub fn print_answers(answers: &[Answer], sorted_letters: &[char]) {
 
 fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
     let test_letters: Vec<char> = word.chars().sorted().dedup().collect();
-    sorted_letters == &test_letters
+    sorted_letters == test_letters
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
