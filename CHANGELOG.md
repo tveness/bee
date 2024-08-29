@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.3.1
+
+- Add a --help flag
+
 ## 0.3.0
 
 - Modify output format slightly, no commas between words
