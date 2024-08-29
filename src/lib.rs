@@ -1,4 +1,5 @@
 use anyhow::{bail, Result};
+use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
@@ -17,13 +18,26 @@ pub fn load_sorted_words() -> Result<WordMap> {
     Ok(sorted_words)
 }
 
-pub fn print_answers(answers: &[Answer]) {
+pub fn print_answers(answers: &[Answer], sorted_letters: &[char]) {
     for Answer { length, words } in answers {
         let mut words = words.clone();
         words.sort();
         words.dedup();
-        println!("{:>2}: {:?}", length, words);
+        print!("{:>2}: [ ", length);
+        for word in words {
+            if is_pangram(&word, sorted_letters) {
+                print!("{} ", word.red());
+            } else {
+                print!("{} ", word);
+            }
+        }
+        println!("]");
     }
+}
+
+fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
+    let test_letters: Vec<char> = word.chars().sorted().dedup().collect();
+    sorted_letters == &test_letters
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.3.0
+
+- Modify output format slightly, no commas between words
+- Highlight pangrams in red
+
 ## 0.2.2
 
 - Change minimum length
