@@ -8,14 +8,17 @@ fn main() -> Result<()> {
         bail!("Must be of form bee MABCDE, where M is the middle letter");
     }
     if args[1] == "--help" {
-        println!("{} {}
+        println!(
+            "{} {}
   A simple tool to solve the NYT spelling bee puzzle
 
 USAGE: {} [CENTRAL LETTER][OTHER LETTERS]
-  Will return all of the words of length 3 or more in the built-in dictionary which use M and any other combination of provided letters.",
-        env!("CARGO_PKG_NAME"),
-        env!("CARGO_PKG_VERSION"),
-        env!("CARGO_PKG_NAME"),);
+  Will return all of the words of length 3 or more in the built-in dictionary which use the central
+  letter and any other combination of provided letters.",
+            env!("CARGO_PKG_NAME"),
+            env!("CARGO_PKG_VERSION"),
+            env!("CARGO_PKG_NAME"),
+        );
         return Ok(());
     }
 
