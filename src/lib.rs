@@ -128,3 +128,88 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
 
     Ok(answers)
 }
+
+pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
+    // letter : length : number
+    let mut letter_map: HashMap<char, HashMap<usize, usize>> = HashMap::new();
+    let mut sum: HashMap<usize, usize> = HashMap::new();
+
+    let mut letter_pairs: HashMap<(char, char), usize> = HashMap::new();
+
+    for answer in answers {
+        let length = answer.length;
+        for word in &answer.words {
+            // For each of the words of length `length`
+            let first_char = word.word.chars().next().unwrap();
+
+            // Increase the count e.g. increase lettermap[a][2] if this is a two-letter word
+            let letter_entry = letter_map.entry(first_char).or_default();
+            let length_entry = letter_entry.entry(length).or_insert(0);
+            *length_entry += 1;
+
+            let sum_entry = sum.entry(length).or_insert(0);
+            *sum_entry += 1;
+
+            let second_char = word.word.chars().nth(1).unwrap();
+            let pair_entry = letter_pairs.entry((first_char, second_char)).or_insert(0);
+            *pair_entry += 1;
+        }
+    }
+
+    let sums: Vec<(usize, usize)> = sum.into_iter().sorted_by_key(|a| a.0).collect();
+
+    print!("    ");
+    for length in &sums {
+        print!("{:<3}", length.0.to_string().bold());
+    }
+    let sigma = "Σ".to_owned().bold();
+    let col = ":".to_owned().bold();
+    println!("{sigma}");
+
+    // Now print
+    for l in letters {
+        if let Some(hm) = letter_map.get(l) {
+            let mut running_sum = 0;
+            print!("{}{col}  ", l.to_string().bold());
+            for length in &sums {
+                print!(
+                    "{:<3}",
+                    match hm.get(&length.0) {
+                        Some(x) => {
+                            running_sum += x;
+                            x.to_string()
+                        }
+                        None => "-".to_string(),
+                    }
+                );
+            }
+            println!("{}", running_sum.to_string().bold());
+        }
+    }
+
+    print!("{sigma}{col}  ");
+    for (_, v) in &sums {
+        print!("{:<3}", v.to_string().bold())
+    }
+
+    let sum_sum = sums.iter().fold(0, |acc, x| acc + x.1);
+
+    println!("{sum_sum}");
+    println!();
+
+    // Now print pairs
+    let flat_pairs = letter_pairs.iter().sorted_by_key(|((first, second), _)| {
+        let mut s = first.to_string();
+        s.push(*second);
+        s
+    });
+    let mut old_first = letters[0];
+    for ((first, second), count) in flat_pairs {
+        if *first != old_first {
+            println!();
+        }
+        old_first = *first;
+        print!("{}{}: {count:<3}", first, second);
+    }
+    println!();
+}

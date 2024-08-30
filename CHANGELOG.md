@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.4.0
+
+- Add ability to show basic statistics of solutions (hints) instead of the
+  solutions
+
 ## 0.3.2
 
 - More efficient pangram detection
