@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.3.2
+
+- More efficient pangram detection
+
 ## 0.3.1
 
 - Add a --help flag
