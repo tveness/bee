@@ -128,3 +128,60 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
 
     Ok(answers)
 }
+
+pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
+    let mut letter_map: HashMap<char, HashMap<usize, usize>> = HashMap::new();
+    let mut sum: HashMap<usize, usize> = HashMap::new();
+
+    for answer in answers {
+        for word in &answer.words {
+            let first_char = word.word.chars().next().unwrap();
+            let letter_entry = letter_map.entry(first_char).or_default();
+            let length_entry = letter_entry.entry(answer.length).or_insert(0);
+            *length_entry += 1;
+
+            let sum_entry = sum.entry(answer.length).or_insert(0);
+            *sum_entry += 1;
+        }
+    }
+
+    let sums: Vec<(usize, usize)> = sum.into_iter().sorted_by_key(|a| a.0).collect();
+
+    print!("    ");
+    for length in &sums {
+        print!("{:<3}", length.0.to_string().bold());
+    }
+    let sigma = "Σ".to_owned().bold();
+    let col = ":".to_owned().bold();
+    println!("{sigma}");
+
+    // Now print
+    for l in letters {
+        if let Some(hm) = letter_map.get(l) {
+            let mut running_sum = 0;
+            print!("{}{col}  ", l.to_string().bold());
+            for length in &sums {
+                print!(
+                    "{:<3}",
+                    match hm.get(&length.0) {
+                        Some(x) => {
+                            running_sum += x;
+                            x.to_string()
+                        }
+                        None => "-".to_string(),
+                    }
+                );
+            }
+            println!("{}", running_sum.to_string().bold());
+        }
+    }
+
+    print!("{sigma}{col}  ");
+    for (_, v) in &sums {
+        print!("{:<3}", v.to_string().bold())
+    }
+
+    let sum_sum = sums.iter().fold(0, |acc, x| acc + x.1);
+
+    println!("{sum_sum}");
+}

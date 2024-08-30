@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use bee::{get_answers, print_answers};
+use bee::{get_answers, print_analyse_answers, print_answers};
 use std::env;
 
 fn main() -> Result<()> {
@@ -28,8 +28,15 @@ USAGE: {} [CENTRAL LETTER][OTHER LETTERS]
     println!("Central letter: {middle:?}");
     println!("Other letters: {others:?}");
 
-    let answers = get_answers(middle, others)?;
+    let answers = get_answers(middle, others.clone())?;
 
     print_answers(&answers);
+
+    let mut letters = others.clone();
+    letters.push(middle);
+    letters.sort();
+    letters.dedup();
+
+    print_analyse_answers(&letters, &answers);
     Ok(())
 }
