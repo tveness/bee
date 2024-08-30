@@ -192,7 +192,7 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
     for l in letters {
         if let Some(hm) = letter_map.get(l) {
             let mut running_sum = 0;
-            print!("{}{col}  ", l.to_string().bold());
+            print!("{}{col}  ", l.to_uppercase().to_string().bold());
             for length in &sums {
                 print!(
                     "{:<3}",
@@ -231,7 +231,11 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
             println!();
         }
         old_first = *first;
-        print!("{}{}: {count:<3}", first, second);
+        print!(
+            "{}{}: {count:<3}",
+            first.to_uppercase(),
+            second.to_uppercase()
+        );
     }
     println!();
 }
