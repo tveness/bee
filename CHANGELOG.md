@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.4.1
+
+- Add pangram and word statistics to header of statistics mode
+- Make word beginnings uppercase in statistics mode for clarity
+
 ## 0.4.0
 
 - Add ability to show basic statistics of solutions (hints) instead of the
