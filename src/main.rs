@@ -28,13 +28,8 @@ USAGE: {} [CENTRAL LETTER][OTHER LETTERS]
     println!("Central letter: {middle:?}");
     println!("Other letters: {others:?}");
 
-    let mut letters: Vec<char> = others.clone();
-    letters.push(middle);
-
-    letters.sort();
-
     let answers = get_answers(middle, others)?;
 
-    print_answers(&answers, &letters);
+    print_answers(&answers);
     Ok(())
 }

@@ -18,17 +18,17 @@ pub fn load_sorted_words() -> Result<WordMap> {
     Ok(sorted_words)
 }
 
-pub fn print_answers(answers: &[Answer], sorted_letters: &[char]) {
+pub fn print_answers(answers: &[Answer]) {
     for Answer { length, words } in answers {
         let mut words = words.clone();
         words.sort();
         words.dedup();
         print!("{:>2}: [ ", length);
         for word in words {
-            if is_pangram(&word, sorted_letters) {
-                print!("{} ", word.red());
+            if word.pangram {
+                print!("{} ", word.word.red());
             } else {
-                print!("{} ", word);
+                print!("{} ", word.word);
             }
         }
         println!("]");
@@ -43,7 +43,25 @@ fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Answer {
     pub length: usize,
-    pub words: Vec<String>,
+    pub words: Vec<Word>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Word {
+    word: String,
+    pangram: bool,
+}
+
+impl PartialOrd for Word {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.word.cmp(&other.word))
+    }
+}
+
+impl Ord for Word {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.word.cmp(&other.word)
+    }
 }
 
 impl PartialOrd for Answer {
@@ -63,6 +81,12 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
     others.sort();
     others.dedup();
 
+    let mut pangram = others.clone();
+    pangram.push(middle);
+    pangram.sort();
+    pangram.dedup();
+    let pangram = pangram;
+
     if others.is_empty() {
         bail!("Too short for legal words");
     }
@@ -71,7 +95,7 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
 
     // Generate all combinations
     let l = others.len();
-    let mut answers: HashMap<usize, Vec<String>> = HashMap::new();
+    let mut answers: HashMap<usize, Vec<Word>> = HashMap::new();
 
     // Although minimum length is 4, the length of
     // unique letters may be just two e.g. mama
@@ -86,7 +110,11 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
                     let l = word.len();
                     if l > 3 {
                         let entry = answers.entry(l).or_default();
-                        entry.push(word.clone());
+                        let pangram = is_pangram(word, &pangram);
+                        entry.push(Word {
+                            word: word.clone(),
+                            pangram,
+                        });
                     }
                 }
             }
