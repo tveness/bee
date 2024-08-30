@@ -130,6 +130,28 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
 }
 
 pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
+    let number_of_words: usize = answers.iter().map(|x| x.words.len()).sum();
+
+    let pangrams: usize = answers
+        .iter()
+        .map(|x| {
+            x.words
+                .iter()
+                .map(|x| if x.pangram { 1 } else { 0 })
+                .sum::<usize>()
+        })
+        .sum();
+
+    println!();
+    println!(
+        "{}: {}, {}: {}",
+        "WORDS".bold(),
+        number_of_words,
+        "PANGRAMS".bold(),
+        pangrams
+    );
+    println!();
+
     // letter : length : number
     let mut letter_map: HashMap<char, HashMap<usize, usize>> = HashMap::new();
     let mut sum: HashMap<usize, usize> = HashMap::new();
