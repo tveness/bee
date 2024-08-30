@@ -130,18 +130,29 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
 }
 
 pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
+    // letter : length : number
     let mut letter_map: HashMap<char, HashMap<usize, usize>> = HashMap::new();
     let mut sum: HashMap<usize, usize> = HashMap::new();
 
+    let mut letter_pairs: HashMap<(char, char), usize> = HashMap::new();
+
     for answer in answers {
+        let length = answer.length;
         for word in &answer.words {
+            // For each of the words of length `length`
             let first_char = word.word.chars().next().unwrap();
+
+            // Increase the count e.g. increase lettermap[a][2] if this is a two-letter word
             let letter_entry = letter_map.entry(first_char).or_default();
-            let length_entry = letter_entry.entry(answer.length).or_insert(0);
+            let length_entry = letter_entry.entry(length).or_insert(0);
             *length_entry += 1;
 
-            let sum_entry = sum.entry(answer.length).or_insert(0);
+            let sum_entry = sum.entry(length).or_insert(0);
             *sum_entry += 1;
+
+            let second_char = word.word.chars().nth(1).unwrap();
+            let pair_entry = letter_pairs.entry((first_char, second_char)).or_insert(0);
+            *pair_entry += 1;
         }
     }
 
@@ -184,4 +195,21 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
     let sum_sum = sums.iter().fold(0, |acc, x| acc + x.1);
 
     println!("{sum_sum}");
+    println!();
+
+    // Now print pairs
+    let flat_pairs = letter_pairs.iter().sorted_by_key(|((first, second), _)| {
+        let mut s = first.to_string();
+        s.push(*second);
+        s
+    });
+    let mut old_first = letters[0];
+    for ((first, second), count) in flat_pairs {
+        if *first != old_first {
+            println!();
+        }
+        old_first = *first;
+        print!("{}{}: {count:<3}", first, second);
+    }
+    println!();
 }
