@@ -45,7 +45,7 @@ fn main() -> Result<()> {
     println!("Central letter: {middle:?}");
     println!("Other letters: {others:?}");
 
-    let answers = get_answers(middle, others.clone())?;
+    let answers = get_answers(middle, others.clone(), None)?;
 
     if !stats {
         print_answers(&answers);

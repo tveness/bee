@@ -76,7 +76,11 @@ impl Ord for Answer {
     }
 }
 
-pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
+pub fn get_answers(
+    middle: char,
+    others: Vec<char>,
+    wordmap: Option<WordMap>,
+) -> Result<Vec<Answer>> {
     let mut others = others;
     others.sort();
     others.dedup();
@@ -91,7 +95,10 @@ pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
         bail!("Too short for legal words");
     }
     // Load initial sorted words
-    let sorted_words: WordMap = load_sorted_words()?;
+    let sorted_words: WordMap = match wordmap {
+        Some(inner) => inner,
+        None => load_sorted_words()?,
+    };
 
     // Generate all combinations
     let l = others.len();
