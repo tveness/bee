@@ -32,3 +32,29 @@ Other letters: ['a', 'o', 'r', 't', 'i', 'v']
  9: [ moratoria motivator vomitoria ]
 10: [ amritattva ]
 ```
+
+Alternatively, if you would only like some simple statistics about the answers:
+```bash
+Central letter: 'm'
+Other letters: ['a', 'o', 'i', 't', 'r', 'v']
+
+WORDS: 97, PANGRAMS: 2
+
+    4  5  6  7  8  9  10 Σ
+A:  5  4  1  -  -  -  1  11
+I:  1  2  -  -  1  -  -  4
+M:  23 13 11 3  2  2  -  54
+O:  2  -  -  -  -  -  -  2
+R:  5  -  -  -  -  -  -  5
+T:  4  1  7  2  2  -  -  16
+V:  -  2  2  -  -  1  -  5
+Σ:  40 22 21 5  5  3  1  97
+
+AM: 7  AR: 2  AT: 2
+IM: 4
+MA: 21 MI: 7  MO: 26
+OM: 2
+RA: 1  RI: 1  RO: 3
+TA: 6  TI: 1  TO: 5  TR: 4
+VA: 1  VO: 3  VR: 1
+```
