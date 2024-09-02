@@ -76,16 +76,9 @@ impl Ord for Answer {
     }
 }
 
-pub fn get_answers(
-    middle: char,
-    others: Vec<char>,
-    wordmap: Option<WordMap>,
-) -> Result<Vec<Answer>> {
-    let mut others = others;
-    others.sort();
-    others.dedup();
-
-    let mut pangram = others.clone();
+pub fn get_answers(middle: char, others: &[char], wordmap: Option<WordMap>) -> Result<Vec<Answer>> {
+    let mut pangram: Vec<char> = vec![];
+    pangram.extend_from_slice(others);
     pangram.push(middle);
     pangram.sort();
     pangram.dedup();
@@ -107,9 +100,9 @@ pub fn get_answers(
     // Although minimum length is 4, the length of
     // unique letters may be just two e.g. mama
     for length in 1..=l {
-        for comb in others.clone().into_iter().combinations(length) {
-            let mut chosen_letters: Vec<char> = comb.into_iter().collect();
-            chosen_letters.push(middle);
+        for comb in others.iter().combinations(length) {
+            let mut chosen_letters: Vec<&char> = comb.into_iter().collect();
+            chosen_letters.push(&middle);
             chosen_letters.sort();
             let sorted_word: String = String::from_iter(chosen_letters);
             if let Some(words) = sorted_words.0.get(&sorted_word) {
