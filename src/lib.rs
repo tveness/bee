@@ -5,15 +5,19 @@ use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
 use serde::Deserialize;
 use std::collections::HashMap;
+use trie_rs::{
+    inc_search::{IncSearch, Position},
+    Trie,
+};
 
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
 pub struct WordMap(pub HashMap<String, Vec<String>>);
 
-pub fn load_sorted_words() -> Result<WordMap> {
-    let sorted_words_bytes_compressed = include_bytes!("../sowpods_sorted.postcard.miniz");
+pub fn load_sorted_words() -> Result<Trie<u8>> {
+    let sorted_words_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
     let sorted_words_bytes = decompress_to_vec(sorted_words_bytes_compressed).unwrap();
-    let sorted_words: WordMap = from_bytes(&sorted_words_bytes).unwrap();
+    let sorted_words = from_bytes(&sorted_words_bytes).unwrap();
 
     Ok(sorted_words)
 }
@@ -76,7 +80,12 @@ impl Ord for Answer {
     }
 }
 
-pub fn get_answers(middle: char, others: &[char], wordmap: Option<WordMap>) -> Result<Vec<Answer>> {
+pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
+    let mut all_chars = others.to_vec();
+    all_chars.push(middle);
+    all_chars.sort();
+    let all_chars = all_chars;
+
     let mut pangram: Vec<char> = vec![];
     pangram.extend_from_slice(others);
     pangram.push(middle);
@@ -87,39 +96,84 @@ pub fn get_answers(middle: char, others: &[char], wordmap: Option<WordMap>) -> R
     if others.is_empty() {
         bail!("Too short for legal words");
     }
-    // Load initial sorted words
-    let sorted_words: WordMap = match wordmap {
-        Some(inner) => inner,
-        None => load_sorted_words()?,
-    };
 
-    // Generate all combinations
-    let l = others.len();
+    let first_char = all_chars.first().unwrap();
+
+    let trie = load_sorted_words()?;
+
+    // We will cycle through each of the letters
+    let mut search = trie.inc_search();
+    let mut words = vec![];
     let mut answers: HashMap<usize, Vec<Word>> = HashMap::new();
 
-    // Although minimum length is 4, the length of
-    // unique letters may be just two e.g. mama
-    for length in 1..=l {
-        for comb in others.iter().combinations(length) {
-            let mut chosen_letters: Vec<&char> = comb.into_iter().collect();
-            chosen_letters.push(&middle);
-            chosen_letters.sort();
-            let sorted_word: String = String::from_iter(chosen_letters);
-            if let Some(words) = sorted_words.0.get(&sorted_word) {
-                for word in words {
-                    let l = word.len();
-                    if l > 3 {
-                        let entry = answers.entry(l).or_default();
-                        let pangram = is_pangram(word, &pangram);
-                        entry.push(Word {
-                            word: word.clone(),
-                            pangram,
-                        });
+    // Depth-first search on characters
+    let pos = Position::from(search.clone());
+    let mut visiting = vec![*first_char];
+    let mut positions = vec![pos];
+
+    let mut next_map = HashMap::new();
+    for (a, b) in all_chars.iter().zip(all_chars.iter().skip(1)) {
+        next_map.insert(*a, *b);
+    }
+
+    'outer: loop {
+        if visiting.is_empty() {
+            break;
+        }
+
+        // Try visiting what's up next
+        let up_next = *visiting.last().unwrap();
+        if search.peek(&(up_next as u8)).is_some() {
+            // If it works, then progress the query
+            search.query(&(up_next as u8));
+            // Now try going for the first letter again
+            visiting.push(*first_char);
+            // Save position
+            let current_pos = Position::from(search.clone());
+            positions.push(current_pos);
+
+            // Save exact matches
+            let prefix: String = search.prefix();
+            if prefix.contains(middle) && trie.exact_match(&prefix) {
+                words.push(prefix);
+            }
+        } else {
+            loop {
+                if visiting.is_empty() {
+                    break 'outer;
+                }
+                // If there is a successor to this letter, then we'll just replace up_next with
+                // that
+                let old_next = visiting.pop().unwrap();
+                if let Some(new_next) = next_map.get(&old_next) {
+                    visiting.push(*new_next);
+                    break;
+                } else {
+                    // Otherwise, we'll have to walk back up the tree of positions
+                    positions.pop();
+                    if positions.is_empty() {
+                        break 'outer;
                     }
+                    let last_pos = positions.last().unwrap();
+                    // Reset search
+                    search = IncSearch::resume(&trie.0, *last_pos);
                 }
             }
         }
     }
+
+    // Collect words into proper answers
+    for word in words {
+        let pan = is_pangram(&word, &pangram);
+        let l = word.len();
+        let e = answers.entry(l).or_insert(vec![]);
+        let w = Word {
+            word: word.to_string(),
+            pangram: pan,
+        };
+        e.push(w);
+    }
+
     let mut answers: Vec<Answer> = answers
         .into_iter()
         .map(|(length, words)| Answer { length, words })

@@ -11,3 +11,4 @@ itertools = "0.13.0"
 miniz_oxide = "0.8.0"
 postcard = { version = "1.0.8", features = ["use-std"] }
 serde = { version = "1.0.207", features = ["derive"] }
+trie-rs = { version = "0.4.2", features = ["serde"] }
