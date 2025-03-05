@@ -82,7 +82,6 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
-    let mut words = vec![];
     let mut answers: HashMap<usize, Vec<Word>> = HashMap::new();
 
     // Depth-first search on characters
@@ -90,12 +89,15 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
     let mut visiting = vec![*first_char];
     let mut positions = vec![pos];
 
+    // A map of the next letter in the sequence
+    // e.g. for [a, b, c, d] -> { a: b, b: c, c: d}
     let next_map: HashMap<char, char> = all_chars
         .iter()
         .zip(all_chars.iter().skip(1))
         .map(|(a, b)| (*a, *b))
         .collect();
 
+    // Depth-first search
     'outer: loop {
         if visiting.is_empty() {
             break;
@@ -115,7 +117,14 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
             // Save exact matches
             let prefix: String = search.prefix();
             if prefix.contains(middle) && trie.exact_match(&prefix) {
-                words.push(prefix);
+                let pan = is_pangram(&prefix, &all_chars);
+                let l = prefix.len();
+                let e = answers.entry(l).or_insert(vec![]);
+                let w = Word {
+                    word: prefix.to_string(),
+                    pangram: pan,
+                };
+                e.push(w);
             }
         } else {
             loop {
@@ -140,18 +149,6 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
                 }
             }
         }
-    }
-
-    // Collect words into proper answers
-    for word in words {
-        let pan = is_pangram(&word, &all_chars);
-        let l = word.len();
-        let e = answers.entry(l).or_insert(vec![]);
-        let w = Word {
-            word: word.to_string(),
-            pangram: pan,
-        };
-        e.push(w);
     }
 
     let mut answers: Vec<Answer> = answers
