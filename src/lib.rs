@@ -132,7 +132,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
                     visiting.push(*new_next);
                     break;
                 } else {
-                    // Otherwise, we'll have to walk back up the tree of positions
+                    // Otherwise, we'll have to backtrack using the saved positions
                     positions.pop();
                     if positions.is_empty() {
                         break 'outer;
