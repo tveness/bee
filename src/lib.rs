@@ -69,14 +69,10 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
     let mut all_chars = others.to_vec();
     all_chars.push(middle);
     all_chars.sort();
+    all_chars.dedup();
     let all_chars = all_chars;
 
-    let mut pangram: Vec<char> = vec![];
-    pangram.extend_from_slice(others);
-    pangram.push(middle);
-    pangram.sort();
-    pangram.dedup();
-    let pangram = pangram;
+    let pangram: Vec<char> = all_chars.clone();
 
     if others.is_empty() {
         bail!("Too short for legal words");
