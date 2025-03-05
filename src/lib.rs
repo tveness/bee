@@ -151,11 +151,11 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
         }
     }
 
-    let mut answers: Vec<Answer> = answers
+    let answers: Vec<Answer> = answers
         .into_iter()
         .map(|(length, words)| Answer { length, words })
+        .sorted()
         .collect();
-    answers.sort();
 
     Ok(answers)
 }
