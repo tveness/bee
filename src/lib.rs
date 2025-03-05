@@ -3,16 +3,11 @@ use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use serde::Deserialize;
 use std::collections::HashMap;
 use trie_rs::{
     inc_search::{IncSearch, Position},
     Trie,
 };
-
-#[derive(Debug, Deserialize)]
-#[serde(transparent)]
-pub struct WordMap(pub HashMap<String, Vec<String>>);
 
 pub fn load_trie() -> Result<Trie<u8>> {
     let trie_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
