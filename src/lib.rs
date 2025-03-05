@@ -131,8 +131,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
                 if visiting.is_empty() {
                     break 'outer;
                 }
-                // If there is a successor to this letter, then we'll just replace up_next with
-                // that
+                // If there is a successor to this letter, then replace up_next with that
                 let old_next = visiting.pop().unwrap();
                 if let Some(new_next) = next_map.get(&old_next) {
                     visiting.push(*new_next);
