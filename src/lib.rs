@@ -14,12 +14,12 @@ use trie_rs::{
 #[serde(transparent)]
 pub struct WordMap(pub HashMap<String, Vec<String>>);
 
-pub fn load_sorted_words() -> Result<Trie<u8>> {
-    let sorted_words_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
-    let sorted_words_bytes = decompress_to_vec(sorted_words_bytes_compressed).unwrap();
-    let sorted_words = from_bytes(&sorted_words_bytes).unwrap();
+pub fn load_trie() -> Result<Trie<u8>> {
+    let trie_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
+    let trie_bytes = decompress_to_vec(trie_bytes_compressed).unwrap();
+    let trie = from_bytes(&trie_bytes).unwrap();
 
-    Ok(sorted_words)
+    Ok(trie)
 }
 
 pub fn print_answers(answers: &[Answer]) {
@@ -99,7 +99,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
 
     let first_char = all_chars.first().unwrap();
 
-    let trie = load_sorted_words()?;
+    let trie = load_trie()?;
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
