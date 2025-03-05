@@ -24,9 +24,6 @@ pub fn load_trie() -> Result<Trie<u8>> {
 
 pub fn print_answers(answers: &[Answer]) {
     for Answer { length, words } in answers {
-        let mut words = words.clone();
-        words.sort();
-        words.dedup();
         print!("{:>2}: [ ", length);
         for word in words {
             if word.pangram {
@@ -54,18 +51,6 @@ pub struct Answer {
 pub struct Word {
     word: String,
     pangram: bool,
-}
-
-impl PartialOrd for Word {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.word.cmp(&other.word))
-    }
-}
-
-impl Ord for Word {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.word.cmp(&other.word)
-    }
 }
 
 impl PartialOrd for Answer {
