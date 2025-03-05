@@ -119,7 +119,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
             if prefix.contains(middle) && trie.exact_match(&prefix) {
                 let pan = is_pangram(&prefix, &all_chars);
                 let l = prefix.len();
-                let e = answers.entry(l).or_insert(vec![]);
+                let e = answers.entry(l).or_default();
                 let w = Word {
                     word: prefix.to_string(),
                     pangram: pan,
