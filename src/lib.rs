@@ -72,8 +72,6 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
     all_chars.dedup();
     let all_chars = all_chars;
 
-    let pangram: Vec<char> = all_chars.clone();
-
     if others.is_empty() {
         bail!("Too short for legal words");
     }
@@ -146,7 +144,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
 
     // Collect words into proper answers
     for word in words {
-        let pan = is_pangram(&word, &pangram);
+        let pan = is_pangram(&word, &all_chars);
         let l = word.len();
         let e = answers.entry(l).or_insert(vec![]);
         let w = Word {
