@@ -134,11 +134,12 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
                 } else {
                     // Otherwise, we'll have to backtrack using the saved positions
                     positions.pop();
+                    // If there are no positions saved, we are at the end of the line
                     if positions.is_empty() {
                         break 'outer;
                     }
                     let last_pos = positions.last().unwrap();
-                    // Reset search
+                    // Reset search to this position
                     search = IncSearch::resume(&trie.0, *last_pos);
                 }
             }
