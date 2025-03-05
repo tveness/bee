@@ -111,10 +111,11 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
     let mut visiting = vec![*first_char];
     let mut positions = vec![pos];
 
-    let mut next_map = HashMap::new();
-    for (a, b) in all_chars.iter().zip(all_chars.iter().skip(1)) {
-        next_map.insert(*a, *b);
-    }
+    let next_map: HashMap<char, char> = all_chars
+        .iter()
+        .zip(all_chars.iter().skip(1))
+        .map(|(a, b)| (*a, *b))
+        .collect();
 
     'outer: loop {
         if visiting.is_empty() {
