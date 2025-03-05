@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.5.0
+
+- Change algorithm to use a Trie instead
+- Trie algorithm is more space-efficient, and faster for small inputs
+
 ## 0.4.1
 
 - Add pangram and word statistics to header of statistics mode
