@@ -9,6 +9,7 @@ use trie_rs::{
     Trie,
 };
 
+/// This loads the compressed Trie of words which we are searching for the character in
 pub fn load_trie() -> Result<Trie<u8>> {
     let trie_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
     let trie_bytes = decompress_to_vec(trie_bytes_compressed).unwrap();
@@ -17,6 +18,7 @@ pub fn load_trie() -> Result<Trie<u8>> {
     Ok(trie)
 }
 
+/// Prints a collection of [`Answer`]s, indicating their length and then the words
 pub fn print_answers(answers: &[Answer]) {
     for Answer { length, words } in answers {
         print!("{:>2}: [ ", length);
@@ -31,6 +33,7 @@ pub fn print_answers(answers: &[Answer]) {
     }
 }
 
+/// Determines whether a `word` uses all of the letters, and only the letters, in `sorted_letters`
 fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
     let test_letters: Vec<char> = word.chars().sorted().dedup().collect();
     sorted_letters == test_letters
@@ -77,7 +80,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
-    let mut answers: HashMap<usize, Vec<Word>> = HashMap::new();
+    let mut length_word_map: HashMap<usize, Vec<Word>> = HashMap::new();
 
     // Depth-first search on characters
     let pos = Position::from(search.clone());
@@ -114,7 +117,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
             if prefix.contains(middle) && trie.exact_match(&prefix) {
                 let pan = is_pangram(&prefix, &all_chars);
                 let l = prefix.len();
-                let e = answers.entry(l).or_default();
+                let e = length_word_map.entry(l).or_default();
                 let w = Word {
                     word: prefix.to_string(),
                     pangram: pan,
@@ -146,7 +149,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
         }
     }
 
-    let answers: Vec<Answer> = answers
+    let answers: Vec<Answer> = length_word_map
         .into_iter()
         .map(|(length, words)| Answer { length, words })
         .sorted()
