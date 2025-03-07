@@ -3,7 +3,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, HashMap};
 use trie_rs::{
     inc_search::{IncSearch, Position},
     Trie,
@@ -11,7 +11,7 @@ use trie_rs::{
 
 /// Convenience type which holds the answers mapping from the length of the words to a collection
 /// of words of that length
-type Answers = BTreeMap<usize, BTreeSet<Word>>;
+type Answers = BTreeMap<usize, Vec<Word>>;
 
 /// This loads the compressed Trie of words which we are searching for the character in
 pub fn load_trie() -> Result<Trie<u8>> {
@@ -104,8 +104,8 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
                 };
                 let e = length_word_map.entry(l).or_default();
 
-                // Insert sorted
-                e.insert(w);
+                // Insert is sorted as we visit words in alphabetical order
+                e.push(w);
             }
         } else {
             'inner: loop {
