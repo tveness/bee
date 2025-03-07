@@ -44,11 +44,6 @@ pub struct Word {
     pangram: bool,
 }
 
-pub enum MaybePangram {
-    Pangram(String),
-    NotPangram(String),
-}
-
 pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<Word>>> {
     let mut all_chars = others.to_vec();
     all_chars.push(middle);
