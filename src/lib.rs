@@ -3,7 +3,7 @@ use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use trie_rs::{
     inc_search::{IncSearch, Position},
     Trie,
@@ -18,9 +18,8 @@ pub fn load_trie() -> Result<Trie<u8>> {
     Ok(trie)
 }
 
-/// Prints a collection of [`Answer`]s, indicating their length and then the words
-pub fn print_answers(answers: &[Answer]) {
-    for Answer { length, words } in answers {
+pub fn print_answers(answers: &BTreeMap<usize, Vec<Word>>) {
+    for (length, words) in answers {
         print!("{:>2}: [ ", length);
         for word in words {
             if word.pangram {
@@ -39,31 +38,18 @@ fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
     sorted_letters == test_letters
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Answer {
-    pub length: usize,
-    pub words: Vec<Word>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Word {
     word: String,
     pangram: bool,
 }
 
-impl PartialOrd for Answer {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.length.cmp(&other.length))
-    }
+pub enum MaybePangram {
+    Pangram(String),
+    NotPangram(String),
 }
 
-impl Ord for Answer {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.length.cmp(&other.length)
-    }
-}
-
-pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
+pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<Word>>> {
     let mut all_chars = others.to_vec();
     all_chars.push(middle);
     all_chars.sort();
@@ -80,7 +66,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
-    let mut length_word_map: HashMap<usize, Vec<Word>> = HashMap::new();
+    let mut length_word_map: BTreeMap<usize, Vec<Word>> = BTreeMap::new();
 
     // Depth-first search on characters
     let pos = Position::from(search.clone());
@@ -117,12 +103,16 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
             if prefix.contains(middle) && trie.exact_match(&prefix) {
                 let pan = is_pangram(&prefix, &all_chars);
                 let l = prefix.len();
-                let e = length_word_map.entry(l).or_default();
                 let w = Word {
                     word: prefix.to_string(),
                     pangram: pan,
                 };
-                e.push(w);
+                let e = length_word_map.entry(l).or_default();
+
+                // Insert sorted
+                if let Err(pos) = e.binary_search(&w) {
+                    e.insert(pos, w);
+                }
             }
         } else {
             loop {
@@ -149,23 +139,16 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Vec<Answer>> {
         }
     }
 
-    let answers: Vec<Answer> = length_word_map
-        .into_iter()
-        .map(|(length, words)| Answer { length, words })
-        .sorted()
-        .collect();
-
-    Ok(answers)
+    Ok(length_word_map)
 }
 
-pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
-    let number_of_words: usize = answers.iter().map(|x| x.words.len()).sum();
+pub fn print_analyse_answers(letters: &[char], answers: &BTreeMap<usize, Vec<Word>>) {
+    let number_of_words: usize = answers.iter().map(|x| x.1.len()).sum();
 
     let pangrams: usize = answers
         .iter()
         .map(|x| {
-            x.words
-                .iter()
+            x.1.iter()
                 .map(|x| if x.pangram { 1 } else { 0 })
                 .sum::<usize>()
         })
@@ -187,9 +170,8 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
 
     let mut letter_pairs: HashMap<(char, char), usize> = HashMap::new();
 
-    for answer in answers {
-        let length = answer.length;
-        for word in &answer.words {
+    for (&length, words) in answers {
+        for word in words {
             // For each of the words of length `length`
             let first_char = word.word.chars().next().unwrap();
 
