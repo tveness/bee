@@ -81,11 +81,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
         .collect();
 
     // Depth-first search
-    'outer: loop {
-        if visiting.is_empty() {
-            break;
-        }
-
+    loop {
         // Try visiting what's up next
         let up_next = *visiting.last().unwrap();
         if search.peek(&(up_next as u8)).is_some() {
@@ -112,21 +108,18 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
                 e.insert(w);
             }
         } else {
-            loop {
-                if visiting.is_empty() {
-                    break 'outer;
-                }
+            'inner: loop {
                 // If there is a successor to this letter, then replace up_next with that
                 let old_next = visiting.pop().unwrap();
                 if let Some(new_next) = next_map.get(&old_next) {
                     visiting.push(*new_next);
-                    break;
+                    break 'inner;
                 } else {
                     // Otherwise, we'll have to backtrack using the saved positions
                     positions.pop();
                     // If there are no positions saved, we are at the end of the line
                     if positions.is_empty() {
-                        break 'outer;
+                        return Ok(length_word_map);
                     }
                     let last_pos = positions.last().unwrap();
                     // Reset search to this position
@@ -135,8 +128,6 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
             }
         }
     }
-
-    Ok(length_word_map)
 }
 
 pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
