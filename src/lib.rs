@@ -3,11 +3,15 @@ use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use trie_rs::{
     inc_search::{IncSearch, Position},
     Trie,
 };
+
+/// Convenience type which holds the answers mapping from the length of the words to a collection
+/// of words of that length
+type Answers = BTreeMap<usize, BTreeSet<Word>>;
 
 /// This loads the compressed Trie of words which we are searching for the character in
 pub fn load_trie() -> Result<Trie<u8>> {
@@ -18,7 +22,7 @@ pub fn load_trie() -> Result<Trie<u8>> {
     Ok(trie)
 }
 
-pub fn print_answers(answers: &BTreeMap<usize, Vec<Word>>) {
+pub fn print_answers(answers: &Answers) {
     for (length, words) in answers {
         print!("{:>2}: [ ", length);
         for word in words {
@@ -44,7 +48,7 @@ pub struct Word {
     pangram: bool,
 }
 
-pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<Word>>> {
+pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
     let mut all_chars = others.to_vec();
     all_chars.push(middle);
     all_chars.sort();
@@ -61,7 +65,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
-    let mut length_word_map: BTreeMap<usize, Vec<Word>> = BTreeMap::new();
+    let mut length_word_map = Answers::new();
 
     // Depth-first search on characters
     let pos = Position::from(search.clone());
@@ -105,9 +109,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<
                 let e = length_word_map.entry(l).or_default();
 
                 // Insert sorted
-                if let Err(pos) = e.binary_search(&w) {
-                    e.insert(pos, w);
-                }
+                e.insert(w);
             }
         } else {
             loop {
@@ -137,7 +139,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<BTreeMap<usize, Vec<
     Ok(length_word_map)
 }
 
-pub fn print_analyse_answers(letters: &[char], answers: &BTreeMap<usize, Vec<Word>>) {
+pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
     let number_of_words: usize = answers.iter().map(|x| x.1.len()).sum();
 
     let pangrams: usize = answers
