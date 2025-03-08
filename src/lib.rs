@@ -1,142 +1,155 @@
+//! Core methods for solving the bee
+
+#![deny(missing_docs)]
 use anyhow::{bail, Result};
 use colored::Colorize;
 use itertools::Itertools;
 use miniz_oxide::inflate::decompress_to_vec;
 use postcard::from_bytes;
-use serde::Deserialize;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
+use trie_rs::{
+    inc_search::{IncSearch, Position},
+    Trie,
+};
 
-#[derive(Debug, Deserialize)]
-#[serde(transparent)]
-pub struct WordMap(pub HashMap<String, Vec<String>>);
+/// Convenience type which holds the answers mapping from the length of the words to a collection
+/// of words of that length
+#[derive(Default)]
+pub struct Answers(pub BTreeMap<usize, Vec<Word>>);
 
-pub fn load_sorted_words() -> Result<WordMap> {
-    let sorted_words_bytes_compressed = include_bytes!("../sowpods_sorted.postcard.miniz");
-    let sorted_words_bytes = decompress_to_vec(sorted_words_bytes_compressed).unwrap();
-    let sorted_words: WordMap = from_bytes(&sorted_words_bytes).unwrap();
+/// Loads the compressed Trie of words which we are searching for the character in
+pub fn load_trie() -> Result<Trie<u8>> {
+    let trie_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
+    let trie_bytes = decompress_to_vec(trie_bytes_compressed).unwrap();
+    let trie = from_bytes(&trie_bytes).unwrap();
 
-    Ok(sorted_words)
+    Ok(trie)
 }
 
-pub fn print_answers(answers: &[Answer]) {
-    for Answer { length, words } in answers {
-        let mut words = words.clone();
-        words.sort();
-        words.dedup();
-        print!("{:>2}: [ ", length);
-        for word in words {
-            if word.pangram {
-                print!("{} ", word.word.red());
-            } else {
-                print!("{} ", word.word);
+impl std::fmt::Display for Answers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (length, words) in &self.0 {
+            write!(f, "{:>2}: [ ", length)?;
+            for word in words {
+                if word.pangram {
+                    write!(f, "{} ", word.word.red())?;
+                } else {
+                    write!(f, "{} ", word.word)?;
+                }
             }
+            writeln!(f, "]")?;
         }
-        println!("]");
+        Ok(())
     }
 }
 
+/// Determines whether a `word` uses all of the letters, and only the letters, in `sorted_letters`
 fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
     let test_letters: Vec<char> = word.chars().sorted().dedup().collect();
     sorted_letters == test_letters
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Answer {
-    pub length: usize,
-    pub words: Vec<Word>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Represents a word and whether or not it is a pangram
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Word {
+    /// String of word
     word: String,
+    /// Is it a pangram
     pangram: bool,
 }
 
-impl PartialOrd for Word {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.word.cmp(&other.word))
-    }
-}
-
-impl Ord for Word {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.word.cmp(&other.word)
-    }
-}
-
-impl PartialOrd for Answer {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.length.cmp(&other.length))
-    }
-}
-
-impl Ord for Answer {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.length.cmp(&other.length)
-    }
-}
-
-pub fn get_answers(middle: char, others: Vec<char>) -> Result<Vec<Answer>> {
-    let mut others = others;
-    others.sort();
-    others.dedup();
-
-    let mut pangram = others.clone();
-    pangram.push(middle);
-    pangram.sort();
-    pangram.dedup();
-    let pangram = pangram;
+/// Core algorithm for solving
+pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
+    let mut all_chars = others.to_vec();
+    all_chars.push(middle);
+    all_chars.sort();
+    all_chars.dedup();
+    let all_chars = all_chars;
 
     if others.is_empty() {
         bail!("Too short for legal words");
     }
-    // Load initial sorted words
-    let sorted_words: WordMap = load_sorted_words()?;
 
-    // Generate all combinations
-    let l = others.len();
-    let mut answers: HashMap<usize, Vec<Word>> = HashMap::new();
+    let first_char = all_chars.first().unwrap();
 
-    // Although minimum length is 4, the length of
-    // unique letters may be just two e.g. mama
-    for length in 1..=l {
-        for comb in others.clone().into_iter().combinations(length) {
-            let mut chosen_letters: Vec<char> = comb.into_iter().collect();
-            chosen_letters.push(middle);
-            chosen_letters.sort();
-            let sorted_word: String = String::from_iter(chosen_letters);
-            if let Some(words) = sorted_words.0.get(&sorted_word) {
-                for word in words {
-                    let l = word.len();
-                    if l > 3 {
-                        let entry = answers.entry(l).or_default();
-                        let pangram = is_pangram(word, &pangram);
-                        entry.push(Word {
-                            word: word.clone(),
-                            pangram,
-                        });
+    let trie = load_trie()?;
+
+    // We will cycle through each of the letters
+    let mut search = trie.inc_search();
+    let mut length_word_map = Answers::default();
+
+    // Depth-first search on characters
+    let pos = Position::from(search.clone());
+    let mut visiting = vec![*first_char];
+    let mut positions = vec![pos];
+
+    // A map of the next letter in the sequence
+    // e.g. for [a, b, c, d] -> { a: b, b: c, c: d}
+    let next_map: HashMap<char, char> = all_chars
+        .iter()
+        .zip(all_chars.iter().skip(1))
+        .map(|(a, b)| (*a, *b))
+        .collect();
+
+    // Depth-first search
+    loop {
+        // Try visiting what's up next
+        let up_next = *visiting.last().unwrap();
+        if search.peek(&(up_next as u8)).is_some() {
+            // If it works, then progress the query
+            search.query(&(up_next as u8));
+            // Now try going for the first letter again
+            visiting.push(*first_char);
+            // Save position
+            let current_pos = Position::from(search.clone());
+            positions.push(current_pos);
+
+            // Save exact matches
+            let prefix: String = search.prefix();
+            if prefix.contains(middle) && trie.exact_match(&prefix) {
+                let pan = is_pangram(&prefix, &all_chars);
+                let l = prefix.len();
+                let w = Word {
+                    word: prefix.to_string(),
+                    pangram: pan,
+                };
+                let e = length_word_map.0.entry(l).or_default();
+
+                // Insert is sorted as we visit words in alphabetical order
+                e.push(w);
+            }
+        } else {
+            'inner: loop {
+                // If there is a successor to this letter, then replace up_next with that
+                let old_next = visiting.pop().unwrap();
+                if let Some(new_next) = next_map.get(&old_next) {
+                    visiting.push(*new_next);
+                    break 'inner;
+                } else {
+                    // Otherwise, we'll have to backtrack using the saved positions
+                    positions.pop();
+                    // If there are no positions saved, we are at the end of the line
+                    if positions.is_empty() {
+                        return Ok(length_word_map);
                     }
+                    let last_pos = positions.last().unwrap();
+                    // Reset search to this position
+                    search = IncSearch::resume(&trie.0, *last_pos);
                 }
             }
         }
     }
-    let mut answers: Vec<Answer> = answers
-        .into_iter()
-        .map(|(length, words)| Answer { length, words })
-        .collect();
-    answers.sort();
-
-    Ok(answers)
 }
 
-pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
-    let number_of_words: usize = answers.iter().map(|x| x.words.len()).sum();
+/// Prints analysis of the answers
+pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
+    let number_of_words: usize = answers.0.iter().map(|x| x.1.len()).sum();
 
     let pangrams: usize = answers
+        .0
         .iter()
         .map(|x| {
-            x.words
-                .iter()
+            x.1.iter()
                 .map(|x| if x.pangram { 1 } else { 0 })
                 .sum::<usize>()
         })
@@ -158,9 +171,8 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
 
     let mut letter_pairs: HashMap<(char, char), usize> = HashMap::new();
 
-    for answer in answers {
-        let length = answer.length;
-        for word in &answer.words {
+    for (&length, words) in &answers.0 {
+        for word in words {
             // For each of the words of length `length`
             let first_char = word.word.chars().next().unwrap();
 
@@ -220,11 +232,9 @@ pub fn print_analyse_answers(letters: &[char], answers: &[Answer]) {
     println!();
 
     // Now print pairs
-    let flat_pairs = letter_pairs.iter().sorted_by_key(|((first, second), _)| {
-        let mut s = first.to_string();
-        s.push(*second);
-        s
-    });
+    let flat_pairs = letter_pairs
+        .iter()
+        .sorted_by_key(|((first, second), _)| format!("{first}{second}"));
     let mut old_first = letters[0];
     for ((first, second), count) in flat_pairs {
         if *first != old_first {

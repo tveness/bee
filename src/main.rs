@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 use argh::FromArgs;
-use bee::{get_answers, print_analyse_answers, print_answers};
+use bee::{get_answers, print_analyse_answers};
+use itertools::Itertools;
 
 #[derive(FromArgs)]
 /// A simple tool to solve the NYT spelling bee puzzle
@@ -41,17 +42,18 @@ fn main() -> Result<()> {
     };
 
     let middle = letters.chars().next().unwrap();
-    let others: Vec<char> = letters.chars().skip(1).collect();
+    let others: Vec<char> = letters.chars().skip(1).sorted().dedup().collect();
+
     println!("Central letter: {middle:?}");
     println!("Other letters: {others:?}");
 
-    let answers = get_answers(middle, others.clone())?;
+    let answers = get_answers(middle, &others)?;
 
     if !stats {
-        print_answers(&answers);
+        println!("{answers}");
     } else {
         // Ensure sorted
-        let mut letters = others.clone();
+        let mut letters = others;
         letters.push(middle);
         letters.sort();
         letters.dedup();
