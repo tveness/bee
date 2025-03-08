@@ -1,3 +1,6 @@
+//! Core methods for solving the bee
+
+#![deny(missing_docs)]
 use anyhow::{bail, Result};
 use colored::Colorize;
 use itertools::Itertools;
@@ -11,9 +14,10 @@ use trie_rs::{
 
 /// Convenience type which holds the answers mapping from the length of the words to a collection
 /// of words of that length
-type Answers = BTreeMap<usize, Vec<Word>>;
+#[derive(Default)]
+pub struct Answers(pub BTreeMap<usize, Vec<Word>>);
 
-/// This loads the compressed Trie of words which we are searching for the character in
+/// Loads the compressed Trie of words which we are searching for the character in
 pub fn load_trie() -> Result<Trie<u8>> {
     let trie_bytes_compressed = include_bytes!("../sowpods_trie.postcard.miniz");
     let trie_bytes = decompress_to_vec(trie_bytes_compressed).unwrap();
@@ -22,17 +26,20 @@ pub fn load_trie() -> Result<Trie<u8>> {
     Ok(trie)
 }
 
-pub fn print_answers(answers: &Answers) {
-    for (length, words) in answers {
-        print!("{:>2}: [ ", length);
-        for word in words {
-            if word.pangram {
-                print!("{} ", word.word.red());
-            } else {
-                print!("{} ", word.word);
+impl std::fmt::Display for Answers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (length, words) in &self.0 {
+            write!(f, "{:>2}: [ ", length)?;
+            for word in words {
+                if word.pangram {
+                    write!(f, "{} ", word.word.red())?;
+                } else {
+                    write!(f, "{} ", word.word)?;
+                }
             }
+            writeln!(f, "]")?;
         }
-        println!("]");
+        Ok(())
     }
 }
 
@@ -42,12 +49,16 @@ fn is_pangram(word: &str, sorted_letters: &[char]) -> bool {
     sorted_letters == test_letters
 }
 
+/// Represents a word and whether or not it is a pangram
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Word {
+    /// String of word
     word: String,
+    /// Is it a pangram
     pangram: bool,
 }
 
+/// Core algorithm for solving
 pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
     let mut all_chars = others.to_vec();
     all_chars.push(middle);
@@ -65,7 +76,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
 
     // We will cycle through each of the letters
     let mut search = trie.inc_search();
-    let mut length_word_map = Answers::new();
+    let mut length_word_map = Answers::default();
 
     // Depth-first search on characters
     let pos = Position::from(search.clone());
@@ -102,7 +113,7 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
                     word: prefix.to_string(),
                     pangram: pan,
                 };
-                let e = length_word_map.entry(l).or_default();
+                let e = length_word_map.0.entry(l).or_default();
 
                 // Insert is sorted as we visit words in alphabetical order
                 e.push(w);
@@ -130,10 +141,12 @@ pub fn get_answers(middle: char, others: &[char]) -> Result<Answers> {
     }
 }
 
+/// Prints analysis of the answers
 pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
-    let number_of_words: usize = answers.iter().map(|x| x.1.len()).sum();
+    let number_of_words: usize = answers.0.iter().map(|x| x.1.len()).sum();
 
     let pangrams: usize = answers
+        .0
         .iter()
         .map(|x| {
             x.1.iter()
@@ -158,7 +171,7 @@ pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
 
     let mut letter_pairs: HashMap<(char, char), usize> = HashMap::new();
 
-    for (&length, words) in answers {
+    for (&length, words) in &answers.0 {
         for word in words {
             // For each of the words of length `length`
             let first_char = word.word.chars().next().unwrap();

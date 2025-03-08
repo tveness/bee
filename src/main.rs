@@ -1,6 +1,6 @@
 use anyhow::{bail, Result};
 use argh::FromArgs;
-use bee::{get_answers, print_analyse_answers, print_answers};
+use bee::{get_answers, print_analyse_answers};
 use itertools::Itertools;
 
 #[derive(FromArgs)]
@@ -50,7 +50,7 @@ fn main() -> Result<()> {
     let answers = get_answers(middle, &others)?;
 
     if !stats {
-        print_answers(&answers);
+        println!("{answers}");
     } else {
         // Ensure sorted
         let mut letters = others;
