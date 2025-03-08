@@ -232,11 +232,9 @@ pub fn print_analyse_answers(letters: &[char], answers: &Answers) {
     println!();
 
     // Now print pairs
-    let flat_pairs = letter_pairs.iter().sorted_by_key(|((first, second), _)| {
-        let mut s = first.to_string();
-        s.push(*second);
-        s
-    });
+    let flat_pairs = letter_pairs
+        .iter()
+        .sorted_by_key(|((first, second), _)| format!("{first}{second}"));
     let mut old_first = letters[0];
     for ((first, second), count) in flat_pairs {
         if *first != old_first {
